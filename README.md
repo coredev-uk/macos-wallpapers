@@ -29,18 +29,18 @@ macos-wallpaper list                       # every picture name in the catalogue
 macos-wallpaper current --latitude 51.5 --longitude -0.13 \
   --picture "The Lake" --picture "The Desert"
 macos-wallpaper next ...                   # switch to another of the --picture names
-macos-wallpaper prefetch ...               # download and render them all ahead of time
 ```
 
 `current` and `next` print the path of the JPEG to show now. Run `current` every few
-minutes (e.g. a systemd timer) and pass the result to your wallpaper setter. A picture's
-first use downloads and renders it (~20 s for a dynamic one); run `prefetch` in the
-background (e.g. at login) so switching never waits. The picture in use is remembered
-between runs.
+minutes (e.g. a systemd timer) and pass the result to your wallpaper setter.
+
+Only the picture in use is kept on disk. Apple ships each picture as one HEIC holding all
+of its images, so `next` downloads that file (65-140 MB for a dynamic one) and renders just
+the image for now; the others are rendered, a few seconds each, when the sun reaches them.
 
 | Option | Default |
 | --- | --- |
-| `--picture NAME` (repeatable) | every picture in the catalogue (`prefetch` needs names) |
+| `--picture NAME` (repeatable) | every picture in the catalogue |
 | `--latitude`, `--longitude` | required for dynamic pictures |
 | `--size WIDTHxHEIGHT` | `3840x2160` |
 | `--cache-dir` | `$XDG_CACHE_HOME/macos-wallpapers` |
