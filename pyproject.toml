@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "macos-wallpapers"
+version = "0.1.0"
+description = "Apple's macOS desktop pictures, dynamic ones included, for any desktop"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.scripts]
+macos-wallpaper = "macos_wallpapers.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

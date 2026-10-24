@@ -1,13 +1,62 @@
-# Aerial Parser
+# macos-wallpapers
 
-A small node script to parse Aerial videos from a specified tarfile to return the download links and names for a specified quality.
+Apple's macOS desktop pictures, including the dynamic ones that follow the sun, as plain
+JPEGs for any wallpaper setter.
+
+macOS downloads most of its desktop pictures on demand from Apple's MobileAsset catalogue
+(`mesu.apple.com`). `macos-wallpaper` reads the same catalogue, downloads a picture (verified
+against the catalogue's SHA-1), and renders its images once, converted from Display P3 to
+sRGB and cropped to your screen size.
+
+## Kinds of picture
+
+| Kind | Examples | Shows |
+| --- | --- | --- |
+| Dynamic | The Lake, The Desert, The Beach, The Cliffs, Big Sur, Catalina, Monterey Graphic, Ventura Graphic, Solar Gradients | One of 5-16 images, by where the sun is |
+| Light/dark | Sonoma, Dome, Peak, Valley, Tree, Iridescence, Chroma Blue | Light while the sun is up, dark after sunset |
+| Static | Catalina Rock, Big Sur Coastline, iMac Blue, ... | One image |
+
+Dynamic pictures are not on a clock: each image is tagged with a sun altitude and azimuth
+(`apple_desktop:solar` in the HEIC's XMP). Those positions are idealised (mornings at
+azimuth 70-110, evenings at 250-290), so the tool takes the half of the day from the time
+of solar noon and picks the image with the closest altitude. The sun's position comes from
+NOAA's solar equations for your latitude and longitude.
 
 ## Usage
 
-1. Choose a tar file from the [this list](https://gist.github.com/theothernt/57a51cade0c12c407f48a5121e0939d5).
+```sh
+macos-wallpaper list                       # every picture name in the catalogue
+macos-wallpaper current --latitude 51.5 --longitude -0.13 \
+  --picture "The Lake" --picture "The Desert"
+macos-wallpaper next ...                   # switch to another of the --picture names
+```
 
-2. Download the tar file and clone the project.
+`current` and `next` print the path of the JPEG to show now. Run `current` every few
+minutes (e.g. a systemd timer) and pass the result to your wallpaper setter; it only
+downloads when a picture is first used. The picture in use is remembered between runs.
 
-3. Install the node modules using your preferred package manager (npm, yarn, bun, pnpm etc.)
+| Option | Default |
+| --- | --- |
+| `--picture NAME` (repeatable) | every picture in the catalogue |
+| `--latitude`, `--longitude` | required for dynamic pictures |
+| `--size WIDTHxHEIGHT` | `3840x2160` |
+| `--cache-dir` | `$XDG_CACHE_HOME/macos-wallpapers` |
 
-4. Run the parse command with the path argument (E.g. `npm run parse ~/resource-x.tar`)
+## Nix
+
+```nix
+inputs.macos-wallpapers.url = "github:coredev-uk/macos-wallpapers";
+# ...
+home.packages = [ inputs.macos-wallpapers.packages.${pkgs.system}.default ];
+```
+
+The package brings ImageMagick (with libheif) and an sRGB profile. Elsewhere it needs
+Python 3.11+, ImageMagick 7 with HEIC support, and `--srgb-profile` pointing at an sRGB ICC
+profile.
+
+## Development
+
+```sh
+nix develop
+pytest
+```
