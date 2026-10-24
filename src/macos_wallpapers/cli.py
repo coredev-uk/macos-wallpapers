@@ -3,10 +3,12 @@
   macos-wallpaper list           every picture in Apple's catalogue
   macos-wallpaper current        the image to show now for the current picture
   macos-wallpaper next           switch to another picture and print its image
+  macos-wallpaper prefetch       download and render every --picture ahead of time
 
 `current` and `next` print the path of a JPEG rendered for the requested size; for dynamic
 pictures it is the one matching the sun's position at the given place. A wallpaper setter
-runs `current` every few minutes and shows whatever it prints.
+runs `current` every few minutes and shows whatever it prints. A picture's first use
+downloads and renders it (~20 s); `prefetch` does that in advance so switching is instant.
 """
 
 import argparse
@@ -63,7 +65,7 @@ def prepare(picture: catalog.Picture, cache: Path, width: int, height: int, prof
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="macos-wallpaper", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["list", "current", "next"])
+    parser.add_argument("command", choices=["list", "current", "next", "prefetch"])
     parser.add_argument("--picture", action="append", default=[], metavar="NAME", help="picture to choose from (repeatable; default: all)")
     parser.add_argument("--latitude", type=float, help="degrees north, for dynamic pictures")
     parser.add_argument("--longitude", type=float, help="degrees east, for dynamic pictures")
@@ -95,6 +97,13 @@ def main(argv: list[str] | None = None) -> int:
     allowed = [name for name in args.picture if name in pictures] or (sorted(pictures) if not args.picture else [])
     if not allowed:
         parser.error("none of the --picture names are in Apple's catalogue (see `macos-wallpaper list`)")
+    if args.command == "prefetch":
+        # Explicit names only: all of Apple's pictures would be ~2.4 GB to download.
+        if not args.picture:
+            parser.error("prefetch needs the --picture names to prepare")
+        for name in allowed:
+            prepare(pictures[name], cache, width, height, args.srgb_profile)
+        return 0
 
     state_path = cache / "state.json"
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
