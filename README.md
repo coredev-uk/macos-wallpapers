@@ -28,15 +28,23 @@ NOAA's solar equations for your latitude and longitude.
 macos-wallpaper list                       # every picture name in the catalogue
 macos-wallpaper current --latitude 51.5 --longitude -0.13 \
   --picture "The Lake" --picture "The Desert"
-macos-wallpaper next ...                   # switch to another of the --picture names
+macos-wallpaper set "The Desert" ...       # switch to a picture
+macos-wallpaper previews ...               # low-res images for now of every --picture, as JSON
 ```
 
-`current` and `next` print the path of the JPEG to show now. Run `current` every few
-minutes (e.g. a systemd timer) and pass the result to your wallpaper setter.
+`current` and `set` print the path of the JPEG to show now. Run `current` every few
+minutes (e.g. a systemd timer) and pass the result to your wallpaper setter. The picture
+in use stays until `set` changes it; the very first run picks one of the `--picture` names.
 
-Only the picture in use is kept on disk. Apple ships each picture as one HEIC holding all
-of its images, so `next` downloads that file (65-140 MB for a dynamic one) and renders just
-the image for now; the others are rendered, a few seconds each, when the sun reaches them.
+Only the picture in use is kept at full size. Apple ships each picture as one HEIC holding
+all of its images, so `set` downloads that file (65-140 MB for a dynamic one) and renders
+just the image for now; the others are rendered, a few seconds each, when the sun reaches
+them.
+
+`previews` is for a wallpaper picker. It keeps a 960x540 copy of every image of every
+`--picture` (about 200 KB each; each picture is downloaded once to make them) and prints
+`{"current": NAME, "pictures": [{"id": NAME, "image": PATH}, ...]}` with each picture's
+image for now.
 
 | Option | Default |
 | --- | --- |
