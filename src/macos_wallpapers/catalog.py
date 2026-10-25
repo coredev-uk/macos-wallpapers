@@ -29,11 +29,23 @@ TIMEOUT = 30
 
 
 @dataclass(frozen=True)
+class Frame:
+    """One aerial video of a place, and the time of day it shows (see aerial.PHASES)."""
+
+    label: str
+    url: str
+    phase: str
+
+
+@dataclass(frozen=True)
 class Picture:
     id: str
     url: str
     sha1: bytes
     size: int
+    # Aerial places only: their videos, one image each. Desktop pictures have a single HEIC.
+    frames: tuple[Frame, ...] = ()
+
 
 
 def _fetch(url: str, dest: Path) -> None:

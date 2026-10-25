@@ -85,23 +85,30 @@ def read_metadata(path: Path) -> Metadata:
     return Metadata(kind="static")
 
 
+# How many degrees of altitude an image from the other half of the day is worth: enough that
+# dawn never stands in for dusk, while a set without an image for some half of the day (e.g. no
+# evening) still falls back to its nearest one.
+HALF_PENALTY = 20
+
+
 def choose(meta: Metadata, altitude: float, morning: bool) -> int:
     """The image for a sun at `altitude` degrees, before (morning) or after solar noon.
 
     Apple tags solar images with idealised positions (azimuth 70-110 for mornings, 250-290 for
     evenings), not where the sun really is at a given place and season. So only the half of
-    the day is taken from the azimuth; within it, the closest altitude wins.
+    the day is taken from the azimuth: the closest altitude wins, with images from the other
+    half counted HALF_PENALTY degrees further away.
     """
     if meta.kind == "solar":
-        half = [s for s in meta.solar if s.morning == morning] or meta.solar
-        return min(half, key=lambda s: abs(s.altitude - altitude)).index
+        return min(meta.solar, key=lambda s: abs(s.altitude - altitude) + (0 if s.morning == morning else HALF_PENALTY)).index
     if meta.kind == "appearance":
         return meta.light if altitude >= 0 else meta.dark
     return 0
 
 
-def render(heic: Path, index: int, out: Path, width: int, height: int, srgb_profile: str) -> None:
-    """Image `index` of heic, converted to sRGB and cropped to fill width x height, as JPEG.
+def render(source: str, out: Path, width: int, height: int, srgb_profile: str) -> None:
+    """source (an image path, or "file.heic[index]"), converted to sRGB and cropped to fill
+    width x height, as JPEG.
 
     Most of Apple's pictures are Display P3; wallpaper setters ignore embedded profiles, so
     the colours are converted rather than just relabelled.
@@ -110,7 +117,7 @@ def render(heic: Path, index: int, out: Path, width: int, height: int, srgb_prof
     subprocess.run(
         [
             "magick",
-            f"{heic}[{index}]",
+            source,
             "-intent", "relative",
             "-profile", srgb_profile,
             "-resize", f"{width}x{height}^",
